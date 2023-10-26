@@ -1,3 +1,5 @@
+'use client'
+import React from 'react';
 import { Container, Grid, Paper } from '@mui/material';
 import VoiceRecorder from '@/components/VoiceRecorder';
 import DiagnosisSelector from '@/components/DiagnosisSelector'
@@ -33,3 +35,5 @@ function MyApp() {
     </Container>
   );
 }
+
+export default MyApp;

@@ -1,36 +1,67 @@
-import React, { useState } from 'react';
-import { ReactMic, BlobEvent, ReactMicStopEvent } from 'react-mic';
+'use client'
+import React, { useState, useRef } from 'react';
+import { Button, IconButton } from '@mui/material';
+import { Mic, Stop, PlayArrow } from '@mui/icons-material';
 
-const VoiceRecorder: React.FC = () => {
-  const [isRecording, setIsRecording] = useState(false);
+const VoiceRecorder = () => {
+  const [recording, setRecording] = useState(false);
+  const [audioURL, setAudioURL] = useState('');
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
-  const startRecording = () => {
-    setIsRecording(true);
-  }
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    audioChunksRef.current = [];
+
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        audioChunksRef.current.push(event.data);
+      }
+    };
+
+    mediaRecorder.onstop = () => {
+      const audioBlob = new Blob(audioChunksRef.current);
+      const audioUrl = URL.createObjectURL(audioBlob);
+      setAudioURL(audioUrl);
+    };
+
+    mediaRecorder.start();
+    setRecording(true);
+  };
 
   const stopRecording = () => {
-    setIsRecording(false);
-  }
-
-  const onData = (recordedBlob: BlobEvent) => {
-    console.log('chunk of real-time data is: ', recordedBlob);
-  }
-
-  const onStop = (recordedBlob: ReactMicStopEvent) => {
-    console.log('recordedBlob is: ', recordedBlob);
-  }
+    mediaRecorderRef.current.stop();
+    setRecording(false);
+  };
 
   return (
     <div>
-      <ReactMic
-        record={isRecording}
-        className="sound-wave"
-        onStop={onStop}
-        onData={onData}
-        strokeColor="#000000"
-        backgroundColor="#FF4081" />
-      <button onClick={startRecording} type="button">Start</button>
-      <button onClick={stopRecording} type="button">Stop</button>
+      {recording ? (
+        <IconButton color="primary" onClick={stopRecording}>
+          <Stop />
+        </IconButton>
+      ) : (
+        <IconButton color="primary" onClick={startRecording}>
+          <Mic />
+        </IconButton>
+      )}
+      {audioURL && (
+        <div>
+          <audio controls src={audioURL}></audio>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              // Handle saving or using the audio file here
+              console.log('Audio URL:', audioURL);
+            }}
+          >
+            Save Recording
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
